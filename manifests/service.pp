@@ -1,27 +1,18 @@
-class thumbor::service
-(
-)
-{
-  if $caller_module_name != $module_name {
-    fail("Use of private class ${name} by ${caller_module_name}")
-  }
-
-  anchor { 'thumbor::service::begin': }
-  -> file { '/etc/systemd/system/thumbor@.service':
+class thumbor::service {
+  systemd::unit_file { 'thumbor@.service':
     ensure  => $thumbor::ensure,
-    owner   => $thumbor::user,
-    group   => $thumbor::group,
-    mode    => '0644',
     content => template('thumbor/thumbor.systemd.erb'),
-    notify  => Exec['thumbor-systemd-reload'],
   }
-  -> thumbor::service::systemd{ [ $thumbor::ports ]: }
-  -> anchor { 'thumbor::service::end': }
-
-  exec { 'thumbor-systemd-reload':
-    command     => 'systemctl daemon-reload',
-    refreshonly => true,
-    path        => [ '/bin', '/sbin', '/usr/bin', '/usr/sbin', '/usr/local/bin', '/usr/local/sbin' ],
+  $thumbor::ports.each |$port| {
+    $service_name = sprintf('thumbor@%d', $port)
+    service { $service_name:
+      enable  => true,
+      require => Systemd::Unit_file['thumbor@.service'],
+    }
+    exec { "start ${service_name}":
+      command     => "systemctl start ${service_name}",
+      refreshonly => true,
+      subscribe   => Service[$service_name],
+    }
   }
 }
-

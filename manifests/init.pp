@@ -27,7 +27,7 @@ class thumbor (
   Enum['present', 'absent']           $ensure           = $thumbor::params::ensure,
   Optional[String]                    $security_key     = $thumbor::params::security_key,
   String                              $listen           = $thumbor::params::listen,
-  Variant[Array[String],String]       $ports            = $thumbor::params::ports,
+  Array[Integer]                      $ports            = $thumbor::params::ports,
   Optional[String]                    $virtualenv_path  = $thumbor::params::virtualenv_path,
   String                              $package_name     = $thumbor::params::package_name,
   Enum['present', 'absent', 'latest'] $package_ensure   = $thumbor::params::package_ensure,
@@ -37,17 +37,14 @@ class thumbor (
   Boolean                             $ensure_group     = $thumbor::params::ensure_group,
   String                              $group            = $thumbor::params::group,
   Variant[Array[String],String]       $extentions       = $thumbor::params::extentions,
-) inherits thumbor::params
-{
+) inherits thumbor::params {
   $apppath = $virtualenv_path ? {
     undef   => '/usr/local/',
     default => "${virtualenv_path}/",
   }
-
   anchor { 'thumbor::begin': }
   -> class{ 'thumbor::install': }
   -> class{ 'thumbor::config': }
   -> class{ 'thumbor::service': }
   -> anchor { 'thumbor::end': }
-
 }
